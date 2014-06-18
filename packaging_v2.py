@@ -53,7 +53,7 @@ class Packaging(object):
             self.upstream_tag = config.get(comp, 'upstream_tag')
             self.upstream_branch = 'upstream-' + self.upstream_tag
             self.cisco_branch = config.get(comp, 'cisco_branch')
-            self.repo_dir = os.path.join(self.stack_dir, self.comp)
+            self.patches_dir = os.path.join(self.stack_dir, 'patches')
             self.unpack_dir = os.path.join(self.rpm_dir,
                                            self.rpm_pkg.split('.')[0])
             self.staging_dir = os.path.join(self.TOPDIR, self.comp)
@@ -65,42 +65,31 @@ class Packaging(object):
         for folder in (self.stack_dir, self.rpm_dir, self.TOPDIR):
             if not os.path.exists(folder):
                 _mkdir(folder)
-        for folder in (self.repo_dir, self.unpack_dir, self.staging_dir):
+        for folder in (self.patches_dir, self.unpack_dir, self.staging_dir):
             if os.path.exists(folder):
                 _runCmd('rm -rf %s' % folder, shell = True)        
-        _mkdir(self.unpack_dir)
-        _mkdir(self.staging_dir)
+            _mkdir(folder)
         _chdir(self.staging_dir)
         for subdir in 'RPMS SRPMS BUILD SOURCES SPECS tmp'.split():
             _mkdir(subdir)
 
-    def clone_git_repo(self):
+    def clone_git_repo(self, stack, repo, pull_remotes = True):
         '''
-        clone upstream repository
+        clone repository and pull remotes
         '''
-        print_banner('clone %s' % self.remotes['origin'])
-        _chdir(self.stack_dir)
+        print_banner('clone %s in %s' % (self.remotes['origin'], stack))
+        _chdir(stack)
         _runCmd('git clone %s' % self.remotes['origin'])
+        if pull_remotes:
+            self.pull_remotes(os.path.join(stack, repo))
 
-    def checkout_branch(self, branch, tag=None):
-        '''
-        checkout branch if tag is skipped 
-        otherwise create a branch off from tag
-        '''
-        print_banner('checkout branch %s' % branch)
-        _chdir(self.repo_dir)
-        if tag:
-            _runCmd('git checkout -b %s %s' % (branch, tag))
-        else:
-            _runCmd('git checkout %s' % branch)
-
-    def pull_remotes(self):
+    def pull_remotes(self, repo_dir):
         '''
         pull all remotes in self.remotes
         '''
-        print_banner('pull remotes %s' % self.remotes)
-        _chdir(self.repo_dir)
-        output, rc = _runCmd('git remote -v')
+        print_banner('pull remotes %s in %s' % (self.remotes, repo_dir))
+        _chdir(repo_dir)
+        output, rc = _runCmd('git remote -v', shell = True)
         current_remotes = {}
         for line in output.split('\n'):
             if line:
@@ -110,38 +99,42 @@ class Packaging(object):
                 _runCmd('git remote add %s %s' % (remote, self.remotes[remote]))
                 _runCmd('git fetch %s' % remote)
 
-    def cherry(self):
+    def check_up_to_date(self, repo_dir):
         '''
-        generate the delta between upstream branch and cisco dev branch
-        return: list of commit ids
+        check if current cisco branch is up-to-date
         '''
-        print_banner('generate the deltas between %s and %s' %
-                     (self.upstream_branch, self.cisco_branch))
-        _chdir(self.repo_dir)
+        print_banner('check if code in %s is up-to-date' % repo_dir)
+        _chdir(repo_dir)
         _runCmd('git checkout %s' % self.cisco_branch)
-        output, rc = _runCmd('git cherry %s' % self.upstream_branch)
-        deltas = [line[1:].strip() for line in output.split('\n')
-                  if line.startswith('+')]
-        return deltas
+        output, rc = _runCmd('git pull')
+        print output
+        if 'Already up-to-date' in output:
+            return True
+        else:
+            return False
 
-    def cherry_pick(self, deltas):
+    def create_cisco_patches(self, repo_dir):
         '''
-        cherry pick commits in deltas
-        make sure on right branch when this function is called
+        generate patches between cisco branch and upstream tag
         '''
-        print_banner('cherry pick delta commits')
-        _chdir(self.repo_dir)
-        for commit in deltas:
-            _runCmd('git cherry-pick %s' % commit, exit_on_error = False)
+        print_banner('generate patches between %s and %s' %
+                     (self.upstream_tag, self.cisco_branch))
+        _chdir(repo_dir)
+        _runCmd('git checkout %s' % self.cisco_branch)
+        _runCmd('git format-patch -o %s %s' %
+                (self.patches_dir, self.upstream_tag))
+           
+    def apply_patches(self, repo_dir, patches_dir):
+        '''
+        apply patches on upstream branch,
+        make sure on upstream branch before this function is called
 
-    def apply_redhat_patches(self):
+        @repo_dir: absolute path of the repo on which patches will be applied
+        @patches_dir: absolute path of the patches dir
         '''
-        apply redhat patches in unpack_dir,
-        make sure on right branch when this function is called
-        '''
-        print_banner('apply redhat patches in %s' % self.unpack_dir)
-        _chdir(self.repo_dir)
-        output, rc = _runCmd('ls %s' % os.path.join(self.unpack_dir, '*.patch'),
+        print_banner('apply patches in %s' % patches_dir)
+        _chdir(repo_dir)
+        output, rc = _runCmd('ls %s' % os.path.join(patches_dir, '*.patch'),
                              shell = True)
         for patch in sorted(output.split('\n')):
             if patch:
@@ -172,7 +165,7 @@ class Packaging(object):
         self.version, self.release = version_release.split('-')
         print 'version: %s, release %s' % (self.version, self.release)
 
-    def rpmbuild(self, tarball):
+    def rpmbuild(self):
         '''
         update spec file,
         create TOPDIR,
@@ -187,10 +180,6 @@ class Packaging(object):
                 if re.match(r'.*patch00.*', line, re.IGNORECASE):
                     f_new.write('#' + line)
                     continue
-#            # removed for causing an error during build
-#            elif line.find('neutron.egg-info/SOURCES.txt') != -1:
-#                f_new.write('#'+line)
-#                continue
                 elif line.startswith('Source0:'):
                     tar_filename = line.split('/')[-1]
                     f_new.write('Source0:\t%s' % tar_filename)
@@ -200,12 +189,9 @@ class Packaging(object):
         # copy over payload
         for filename in _listdir(self.unpack_dir):
             if (not fnmatch.fnmatch(filename, '*.spec') and
-                not fnmatch.fnmatch(filename, '*.patch') and
-                not fnmatch.fnmatch(filename, '*.tar.gz')):
+                not fnmatch.fnmatch(filename, '*.patch')):
                 _rename(os.path.join(self.unpack_dir, filename),
                         os.path.join(self.staging_dir, 'SOURCES', filename))
-        _rename(os.path.join(self.stack_dir, tarball),
-                os.path.join(self.staging_dir, 'SOURCES', tarball))
         _rename(os.path.join(self.unpack_dir, 'tmp.spec'), 
                 os.path.join(self.staging_dir, 'SPECS', self.spec_filename))
         # build
@@ -214,32 +200,41 @@ class Packaging(object):
                  os.path.join(self.staging_dir, 'SPECS', self.spec_filename)),
                 shell = True)
 
-    def repackage(self, rdo = None):
-        self.download_rpm(rdo)
-        self.clone_git_repo()
-        self.checkout_branch(self.upstream_branch, self.upstream_tag)
-        self.pull_remotes()
+    def repackage(self, rdo = None, force = False):
+        if os.path.exists(os.path.join(self.stack_dir, self.comp)):
+            _chdir(os.path.join(self.stack_dir, self.comp))
+            up_to_date = self.check_up_to_date(os.path.join(self.stack_dir, self.comp))
+            if not force and up_to_date:
+                print '!!! SKIPPING %s PACKAGE ALREADY UPDATED !!!' % self.comp
+                return 0
+        else:
+            self.clone_git_repo(self.stack_dir, self.comp)
         if self.comp != 'python-neutronclient':    
-            self.checkout_branch(self.cisco_branch)
-            deltas = self.cherry()
-            if debug: pprint(deltas)        
-            self.checkout_branch(self.upstream_branch)
+            self.create_cisco_patches(os.path.join(self.stack_dir, self.comp))
         else:
             # for python-neutronclient, we only pick our commits to patch,
             # which is hard-coded here 
             deltas = ['7932447a633247408530c7baa99b055f52f7e882']
-        self.apply_redhat_patches()
-        self.cherry_pick(deltas)
-        # create tar ball
-        _chdir(self.stack_dir)
-        # folder's name has to be %{rpmname}-%{rpmversion}
-        # tarball's name has to be %{rpmname}-%{rpmversion}.tar.gz
+
+        self.download_rpm(rdo)
+        self.clone_git_repo(self.unpack_dir, self.comp, False)
+        source_dir = os.path.join(self.unpack_dir, self.comp)
+        _chdir(source_dir)
+        _runCmd('git checkout -b %s %s' %
+                (self.upstream_branch, self.upstream_tag))
+        self.apply_patches(source_dir, self.unpack_dir)
+        self.apply_patches(source_dir, self.patches_dir)
+        '''
+        create tar ball
+        folder's name has to be %{rpmname}-%{rpmversion}
+        tarball's name has to be %{rpmname}-%{rpmversion}.tar.gz
+        '''
+        _chdir(self.unpack_dir)
         folder_name = self.comp + '-' + self.version
-        tar_filename = folder_name + '.tar.gz'
-        _rename(self.repo_dir, folder_name)
-        _runCmd('tar -cvzf %s %s' % (tar_filename, folder_name))
-        _rename(folder_name, self.repo_dir)
-        self.rpmbuild(tar_filename)
+        tarball_name = folder_name + '.tar.gz'
+        _rename(self.comp, folder_name)
+        _runCmd('tar -cvzf %s %s' % (tarball_name, folder_name))
+        self.rpmbuild()
 
 
 def _chdir(path):
@@ -306,12 +301,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('comp')
     parser.add_argument('--conf', help='location of packaging.conf file')
-    parser.add_argument('--rdo', help='location of rdo file')
+    parser.add_argument('--rdo', help='absolute path of rdo file')
+    parser.add_argument(
+           '--force',
+           help = 'force to recreate package no matter if cisco code is changed',
+           action = 'store_true')
     args = parser.parse_args()
     print args.comp, args.conf, args.rdo
     if 'neutron' == args.comp:
         neutron = Packaging(args.conf, 'neutron')
-        neutron.repackage(args.rdo)
+        neutron.repackage(args.rdo, args.force)
     if 'python-neutronclient' == args.comp:
         python_neutronclient = Packaging(args.conf, 'python-neutronclient')
-        python_neutronclient.repackage(args.rdo)
+        python_neutronclient.repackage(args.rdo, args.force)
