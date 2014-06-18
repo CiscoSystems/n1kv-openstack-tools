@@ -33,17 +33,17 @@ class Packaging(object):
     '''
     packaging class
     '''
-    def __init__(self, conf_file, comp):
+    def __init__(self, conf, comp):
         '''
         parse packaging.conf file and other init work
 
-        @conf_file: location of config file
+        @conf: location of config file
         @comp: choose from neutron, python-neutronclient and horizon
         '''
         self.comp = comp
         try:
             config = Parser()
-            config.read(conf_file)
+            config.read(conf)
             self.stack_dir = config.get('general', 'stack_dir')
             self.rpm_dir = config.get('general', 'rpm_dir')
             self.TOPDIR = config.get('general', 'TOPDIR') 
@@ -59,7 +59,7 @@ class Packaging(object):
             self.staging_dir = os.path.join(self.TOPDIR, self.comp)
             self.spec_filename = self.rpm_pkg.split('.')[0] + '.spec'
         except ConfigParser.Error as e:
-            print_error('error parsing config file %s', conf_file)
+            print_error('error parsing config file %s' % conf)
             sys.exit(e)
 
         for folder in (self.stack_dir, self.rpm_dir, self.TOPDIR):
@@ -68,7 +68,8 @@ class Packaging(object):
         for folder in (self.repo_dir, self.unpack_dir, self.staging_dir):
             if os.path.exists(folder):
                 _runCmd('rm -rf %s' % folder, shell = True)        
-            _mkdir(folder)
+        _mkdir(self.unpack_dir)
+        _mkdir(self.staging_dir)
         _chdir(self.staging_dir)
         for subdir in 'RPMS SRPMS BUILD SOURCES SPECS tmp'.split():
             _mkdir(subdir)
@@ -131,7 +132,7 @@ class Packaging(object):
         print_banner('cherry pick delta commits')
         _chdir(self.repo_dir)
         for commit in deltas:
-            _runCmd('git cherry-pick %s' % commit)
+            _runCmd('git cherry-pick %s' % commit, exit_on_error = False)
 
     def apply_redhat_patches(self):
         '''
@@ -140,24 +141,13 @@ class Packaging(object):
         '''
         print_banner('apply redhat patches in %s' % self.unpack_dir)
         _chdir(self.repo_dir)
-        output, rc = _runCmd('ls %s' % os.path.join(self.unpack_dir, '*.patch',
+        output, rc = _runCmd('ls %s' % os.path.join(self.unpack_dir, '*.patch'),
                              shell = True)
         for patch in sorted(output.split('\n')):
             if patch:
-                while True:
-                    try:
-                        _runCmd('git apply --ignore-whitespace %s' % patch,
-                                shell = True)
-                    except subprocess.CalledProcessError as e:
-                        print_error(e)
-                        resume = ''
-                        while resume not in ('r', 'n'):
-                            resume = raw_input('press "r" to retry or '
-                                               '"n" to apply next patch')
-                        if resume == 'r': 
-                            continue
-                        else:
-                            break
+                while 'c' in _runCmd('git apply --ignore-whitespace %s' % patch,
+                                     shell = True, check_result = True):
+                    continue
 
     def download_rpm(self, rdo_location = None):
         '''
@@ -165,7 +155,7 @@ class Packaging(object):
         otherwise unpack the rdo package at rdo_location
         '''
         print_banner('download and unpack %s into %s' %
-                     (self.rpm_pkg, self.unpack_dir)
+                     (self.rpm_pkg, self.unpack_dir))
         _chdir(self.unpack_dir)
         if not rdo_location:
             _runCmd('yumdownloader --source %s' % self.rpm_pkg)
@@ -177,9 +167,10 @@ class Packaging(object):
         # %{self.rpm_pkg}-%{version}-%{release}.src.rpm
         # e.g. openstack-neuron-2014.1-19.el6ost.src.rpm 
         src_rpm = output.split('\n')[0]
-        src_rpm.replace(self.rpm_pkg + '-', '')
-        src_rpm.replace('.src.rpm', '')
-        self.version, self.release = src_rpm.split('-')
+        version_release = (src_rpm.replace(self.rpm_pkg.split('.')[0] + '-', '')
+                           .replace('.src.rpm', ''))
+        self.version, self.release = version_release.split('-')
+        print 'version: %s, release %s' % (self.version, self.release)
 
     def rpmbuild(self, tarball):
         '''
@@ -212,9 +203,9 @@ class Packaging(object):
                 not fnmatch.fnmatch(filename, '*.patch') and
                 not fnmatch.fnmatch(filename, '*.tar.gz')):
                 _rename(os.path.join(self.unpack_dir, filename),
-                        os.path.join(self.staging_dir, 'SOURCES'))
+                        os.path.join(self.staging_dir, 'SOURCES', filename))
         _rename(os.path.join(self.stack_dir, tarball),
-                os.path.join(self.staging_dir, 'SOURCES'))
+                os.path.join(self.staging_dir, 'SOURCES', tarball))
         _rename(os.path.join(self.unpack_dir, 'tmp.spec'), 
                 os.path.join(self.staging_dir, 'SPECS', self.spec_filename))
         # build
@@ -223,8 +214,8 @@ class Packaging(object):
                  os.path.join(self.staging_dir, 'SPECS', self.spec_filename)),
                 shell = True)
 
-    def repackage(self):
-        self.download_rpm()
+    def repackage(self, rdo = None):
+        self.download_rpm(rdo)
         self.clone_git_repo()
         self.checkout_branch(self.upstream_branch, self.upstream_tag)
         self.pull_remotes()
@@ -243,35 +234,35 @@ class Packaging(object):
         _chdir(self.stack_dir)
         # folder's name has to be %{rpmname}-%{rpmversion}
         # tarball's name has to be %{rpmname}-%{rpmversion}.tar.gz
-        folder_name = self.rpm_pkg + self.version
+        folder_name = self.comp + '-' + self.version
         tar_filename = folder_name + '.tar.gz'
         _rename(self.repo_dir, folder_name)
-        _runCmd('tar -cvzf %s %s' % (folder_name, tar_filename))
+        _runCmd('tar -cvzf %s %s' % (tar_filename, folder_name))
         _rename(folder_name, self.repo_dir)
-        self.rpmbuild(os.path.join(self.stack_dir, tar_filename))
+        self.rpmbuild(tar_filename)
 
 
 def _chdir(path):
-    print '#cd %s' % path
+    print '# cd %s' % path
     os.chdir(path)
 
 
 def _mkdir(path, mode = 0777):
-    print '#mkdir %s' % path
+    print '# mkdir %s' % path
     os.mkdir(path)
 
 
 def _listdir(path):
-    print '#ls %s' % path
+    print '# ls %s' % path
     return os.listdir(path)
 
 
 def _rename(srcpath, dstpath):
-    print '#mv %s %s' % (srcpath, dstpath)
+    print '# mv %s %s' % (srcpath, dstpath)
     os.rename(srcpath, dstpath)
 
 def _runCmd(cmd, stderr = None, shell = False, echo_cmd = True,
-            check_result=True):
+            check_result = False, exit_on_error = True):
     if echo_cmd:
         print '#', cmd
     cmd_args = cmd if shell else cmd.split()
@@ -283,14 +274,21 @@ def _runCmd(cmd, stderr = None, shell = False, echo_cmd = True,
     except subprocess.CalledProcessError as e:
         if check_result:
             print_error(e)
-            sys.exit(e.returncode)
+            resume = ''
+            while resume not in ('r', 'n'):
+                resume = raw_input('press "r" to retry or '
+                                   '"n" to next operation: ')
+            return resume, e.returncode 
         else:
-            rc = e.returncode
+            if exit_on_error:
+                sys.exit(e.returncode)
+            else: 
+                return e, e.returncode
     return output, rc
 
 
 def print_date():
-    output, rc = run_cmd_line('date --utc', echo_cmd=False, check_result=False)
+    output, rc = _runCmd('date --utc', echo_cmd = False)
     print output
 
 
@@ -305,9 +303,15 @@ def print_error(err):
 
 if __name__ == '__main__':
     print sys.argv
-    if 'neutron' in sys.argv:
-        neutron = Packaging(config_file, 'neutron')
-        neutron.repackaging()
-    if 'python-neutronclient' in sys.argv:
-        python_neutronclient = Packaging(config_file, 'python_neutronclient')
-        python_neutronclient.repackaging()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('comp')
+    parser.add_argument('--conf', help='location of packaging.conf file')
+    parser.add_argument('--rdo', help='location of rdo file')
+    args = parser.parse_args()
+    print args.comp, args.conf, args.rdo
+    if 'neutron' == args.comp:
+        neutron = Packaging(args.conf, 'neutron')
+        neutron.repackage(args.rdo)
+    if 'python-neutronclient' == args.comp:
+        python_neutronclient = Packaging(args.conf, 'python-neutronclient')
+        python_neutronclient.repackage(args.rdo)
