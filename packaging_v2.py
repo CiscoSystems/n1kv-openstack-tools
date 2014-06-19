@@ -86,6 +86,8 @@ class Packaging(object):
     def pull_remotes(self, repo_dir):
         '''
         pull all remotes in self.remotes
+
+        @repo_dir: absolute path to the repo
         '''
         print_banner('pull remotes %s in %s' % (self.remotes, repo_dir))
         _chdir(repo_dir)
@@ -102,6 +104,8 @@ class Packaging(object):
     def check_up_to_date(self, repo_dir):
         '''
         check if current cisco branch is up-to-date
+
+        @repo_dir: absolute path to the repo
         '''
         print_banner('check if code in %s is up-to-date' % repo_dir)
         _chdir(repo_dir)
@@ -116,6 +120,8 @@ class Packaging(object):
     def create_cisco_patches(self, repo_dir):
         '''
         generate patches between cisco branch and upstream tag
+
+        @repo_dir: absolute path to the repo
         '''
         print_banner('generate patches between %s and %s' %
                      (self.upstream_tag, self.cisco_branch))
@@ -129,7 +135,7 @@ class Packaging(object):
         apply patches on upstream branch,
         make sure on upstream branch before this function is called
 
-        @repo_dir: absolute path of the repo on which patches will be applied
+        @repo_dir: absolute path to the repo on which patches will be applied
         @patches_dir: absolute path of the patches dir
         '''
         print_banner('apply patches in %s' % patches_dir)
@@ -146,6 +152,8 @@ class Packaging(object):
         '''
         download and unpack rpm if rdo_location is None,
         otherwise unpack the rdo package at rdo_location
+
+        @rdo_location: absolute path to the rdo package
         '''
         print_banner('download and unpack %s into %s' %
                      (self.rpm_pkg, self.unpack_dir))
@@ -203,21 +211,16 @@ class Packaging(object):
     def repackage(self, rdo = None, force = False):
         if os.path.exists(os.path.join(self.stack_dir, self.comp)):
             _chdir(os.path.join(self.stack_dir, self.comp))
-            up_to_date = self.check_up_to_date(os.path.join(self.stack_dir, self.comp))
+            up_to_date = self.check_up_to_date(os.path.join(self.stack_dir,
+                                                            self.comp))
             if not force and up_to_date:
                 print '!!! SKIPPING %s PACKAGE ALREADY UPDATED !!!' % self.comp
                 return 0
         else:
             self.clone_git_repo(self.stack_dir, self.comp)
-        if self.comp != 'python-neutronclient':    
-            self.create_cisco_patches(os.path.join(self.stack_dir, self.comp))
-        else:
-            # for python-neutronclient, we only pick our commits to patch,
-            # which is hard-coded here 
-            deltas = ['7932447a633247408530c7baa99b055f52f7e882']
-
+        self.create_cisco_patches(os.path.join(self.stack_dir, self.comp))
         self.download_rpm(rdo)
-        self.clone_git_repo(self.unpack_dir, self.comp, False)
+        self.clone_git_repo(self.unpack_dir, self.comp, pull_remotes = False)
         source_dir = os.path.join(self.unpack_dir, self.comp)
         _chdir(source_dir)
         _runCmd('git checkout -b %s %s' %
@@ -235,6 +238,7 @@ class Packaging(object):
         _rename(self.comp, folder_name)
         _runCmd('tar -cvzf %s %s' % (tarball_name, folder_name))
         self.rpmbuild()
+        return 0
 
 
 def _chdir(path):
