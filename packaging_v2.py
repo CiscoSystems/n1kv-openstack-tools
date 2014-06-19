@@ -61,17 +61,9 @@ class Packaging(object):
         except ConfigParser.Error as e:
             print_error('error parsing config file %s' % conf)
             sys.exit(e)
-
         for folder in (self.stack_dir, self.rpm_dir, self.TOPDIR):
             if not os.path.exists(folder):
                 _mkdir(folder)
-        for folder in (self.patches_dir, self.unpack_dir, self.staging_dir):
-            if os.path.exists(folder):
-                _runCmd('rm -rf %s' % folder, shell = True)        
-            _mkdir(folder)
-        _chdir(self.staging_dir)
-        for subdir in 'RPMS SRPMS BUILD SOURCES SPECS tmp'.split():
-            _mkdir(subdir)
 
     def clone_git_repo(self, stack, repo, pull_remotes = True):
         '''
@@ -130,7 +122,7 @@ class Packaging(object):
         _runCmd('git format-patch -o %s %s' %
                 (self.patches_dir, self.upstream_tag))
            
-    def apply_patches(self, repo_dir, patches_dir):
+    def apply_patches(self, repo_dir, patches_dir, interact = False):
         '''
         apply patches on upstream branch,
         make sure on upstream branch before this function is called
@@ -144,9 +136,14 @@ class Packaging(object):
                              shell = True)
         for patch in sorted(output.split('\n')):
             if patch:
-                while 'c' in _runCmd('git apply --ignore-whitespace %s' % patch,
-                                     shell = True, check_result = True):
-                    continue
+                if interact:
+                    while 'r' in _runCmd(('git apply --ignore-whitespace %s' %
+                                          patch),
+                                         shell = True, check_result = True):
+                        continue
+                else:
+                    _runCmd('git apply --ignore-whitespace %s' % patch,
+                            shell = True, exit_on_error = False)
 
     def download_rpm(self, rdo_location = None):
         '''
@@ -209,6 +206,12 @@ class Packaging(object):
                 shell = True)
 
     def repackage(self, rdo = None, force = False):
+        '''
+        main logic
+        
+        @return if there is no change since last time repackage,
+                skip package and return 0, otherwise return 1
+        '''
         if os.path.exists(os.path.join(self.stack_dir, self.comp)):
             _chdir(os.path.join(self.stack_dir, self.comp))
             up_to_date = self.check_up_to_date(os.path.join(self.stack_dir,
@@ -218,6 +221,15 @@ class Packaging(object):
                 return 0
         else:
             self.clone_git_repo(self.stack_dir, self.comp)
+        # clean up workspace
+        for folder in (self.patches_dir, self.unpack_dir, self.staging_dir):
+            if os.path.exists(folder):
+                _runCmd('rm -rf %s' % folder, shell = True)        
+            _mkdir(folder)
+        _chdir(self.staging_dir)
+        for subdir in 'RPMS SRPMS BUILD SOURCES SPECS tmp'.split():
+            _mkdir(subdir)
+
         self.create_cisco_patches(os.path.join(self.stack_dir, self.comp))
         self.download_rpm(rdo)
         self.clone_git_repo(self.unpack_dir, self.comp, pull_remotes = False)
@@ -238,7 +250,7 @@ class Packaging(object):
         _rename(self.comp, folder_name)
         _runCmd('tar -cvzf %s %s' % (tarball_name, folder_name))
         self.rpmbuild()
-        return 0
+        return 1
 
 
 def _chdir(path):
