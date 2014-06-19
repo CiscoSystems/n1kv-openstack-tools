@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+#
+# rpmsign.expect : expect powered rpm signing command
+#
+
+proc usage {} {
+        send_user "Usage: rpmsign.expect rpmfile\n\n"
+        exit
+}
+
+if {[llength $argv]!=1} usage
+
+set rpmfile [lrange $argv 0 0]
+set passphrase "CiscoRPM"
+
+spawn rpm --resign $rpmfile
+expect -exact "Enter pass phrase: "
+send -- "$passphrase\r"
+expect eof

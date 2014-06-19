@@ -1,0 +1,69 @@
+#!/bin/bash
+# push-rpm-to-yum: Copy the given RPM(s) to the yum server and trigger createrepo
+# Prerequisite: Passwordless ssh between the user running this script and REMOTE_USER on YUM_SERVER
+
+YUM_SERVER=savbu-vre-rhel65-vc.cisco.com
+YUM_REPOROOT=/var/ftp/pub/hostedrepo
+REMOTE_USER=n1kv
+
+REMOTE_WORKDIR=/var/tmp/$(basename $0).$$
+SCRIPT=/tmp/$(basename $0).$$.bash
+EXPECT_WRAPPER=$(cd $(dirname $0); pwd)/rpmsign.expect
+
+if [[ -z $@ ]]; then
+    echo "Please specify one or more RPM files!"
+    exit 1
+fi
+
+# Validate the files while building a list of their absolute paths
+FILES=
+for f in $@; do
+    if [[ ! -f $f ]]; then
+        echo "File $f does not exist!"
+        exit 1
+    fi
+    if [[ ! $f = *.rpm ]]; then
+        echo "File $f does not have an .rpm extension!"
+        exit 1
+    fi
+    # Normalize path
+    FILES="$FILES $(cd $(dirname $f); pwd)/$(basename $f)"
+done
+
+ssh $REMOTE_USER@$YUM_SERVER "mkdir $REMOTE_WORKDIR" || exit 1
+
+echo
+echo "Copying files over..."
+rsync -e ssh -avzrL $FILES $EXPECT_WRAPPER $REMOTE_USER@$YUM_SERVER:$REMOTE_WORKDIR || exit 1
+
+# Generate the remote script that'll do the work
+cat > $SCRIPT <<EOT
+#!/bin/bash
+echo
+echo == REMOTE EXECUTION BEGIN ==
+
+cd $REMOTE_WORKDIR
+for f in *.rpm; do
+    echo "Signing: \$f"
+    ./$(basename $EXPECT_WRAPPER) \$f
+done
+rm -f $(basename $EXPECT_WRAPPER)
+
+cp $REMOTE_WORKDIR/* $YUM_REPOROOT || exit 1
+
+echo
+echo "Rebuilding yum repo metadata..."
+echo
+cd $YUM_REPOROOT && createrepo .
+
+rm -rf $REMOTE_WORKDIR
+echo == REMOTE EXECUTION END ==
+EOT
+
+chmod 755 $SCRIPT
+scp $SCRIPT $REMOTE_USER@$YUM_SERVER:$SCRIPT
+ssh $REMOTE_USER@$YUM_SERVER $SCRIPT || exit 1
+
+# Cleanup
+rm -f $SCRIPT
+ssh $REMOTE_USER@$YUM_SERVER "rm -f $SCRIPT"
