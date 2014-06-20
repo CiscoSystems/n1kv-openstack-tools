@@ -192,12 +192,12 @@ class Packaging(object):
                 else:
                     f_new.write(line)
         # copy over payload
-        for filename in _listdir(self.unpack_dir):
+        for filename in _listdir('.'):
             if (not fnmatch.fnmatch(filename, '*.spec') and
                 not fnmatch.fnmatch(filename, '*.patch')):
-                _rename(os.path.join(self.unpack_dir, filename),
+                _rename(filename,
                         os.path.join(self.staging_dir, 'SOURCES', filename))
-        _rename(os.path.join(self.unpack_dir, 'tmp.spec'), 
+        _rename('tmp.spec',
                 os.path.join(self.staging_dir, 'SPECS', self.spec_filename))
         # build
         _runCmd('rpmbuild --define "_topdir %s" -ba %s' %

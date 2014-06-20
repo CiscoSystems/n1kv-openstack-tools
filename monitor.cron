@@ -1,0 +1,12 @@
+#! /bin/bash
+
+# Author: Aaron Zhang (fenzhang)
+#
+
+echo 'n1kv packaging job starts!!'
+
+export https_proxy=http://proxy.esl.cisco.com:8080
+cd /root/openstack/n1kv-openstack-tools
+python monitor.py --conf packaging.conf
+
+echo 'n1kv packaging job completes!!'

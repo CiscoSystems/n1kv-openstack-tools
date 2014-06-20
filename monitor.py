@@ -10,7 +10,7 @@ import os
 import packaging_v2
 import shutil
 
-from packaging_v2 import _chdir, _mkdir, _listdir, _rename
+from packaging_v2 import _chdir, _mkdir, _listdir, _rename, _runCmd
 
 MAXIUM = 10
 components = ['neutron', 'python-neutronclient']
@@ -64,8 +64,17 @@ else:
     _rename('LATEST', str(newest + 1))
     _mkdir('LATEST')
 
+
+# coping over builds
 for comp in components:
     _chdir(os.path.join(TOPDIR, comp, 'RPMS', 'noarch'))
     for afile in _listdir('.'):
         shutil.copy(afile, os.path.join(dump_dir, 'LATEST'))
+
+
+# pushing
+_chdir(pwd)
+_runCmd('./push-rpm-to-yum %s' % os.path.join(dump_dir, 'LATEST', '*'))
+print 'Complete!!'
+
 
