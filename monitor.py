@@ -10,6 +10,7 @@ import os
 import packaging_v2
 import shutil
 
+from datetime import datetime
 from packaging_v2 import _chdir, _mkdir, _listdir, _rename, _runCmd
 
 MAXIUM = 10
@@ -18,6 +19,10 @@ rdos = {'neutron': \
         os.path.join(os.getcwd(), 'openstack-neutron-2014.1-19.el6ost.src.rpm'),
         'python-neutronclient': \
         os.path.join(os.getcwd(),'python-neutronclient-2.3.4-1.el6ost.src.rpm')}
+
+# timestamp
+timestamp = str(datetime.now())
+print "This job's timestamp is ", timestamp
 
 
 # packaging
@@ -32,7 +37,7 @@ parser.add_argument(
 args = parser.parse_args()
 update = 0
 for comp in components:
-    agent = packaging_v2.Packaging(os.path.join(pwd, args.conf), comp)
+    agent = packaging_v2.Packaging(os.path.join(pwd, args.conf), comp, timestamp)
     update |= agent.repackage(rdos[comp], args.force)
 
 if not update:
@@ -63,6 +68,8 @@ else:
         shutil.rmtree(str(oldest))
     _rename('LATEST', str(newest + 1))
     _mkdir('LATEST')
+with open('LATEST/README.TXT', 'w') as f:
+    f.write('Version: %s\nTimestamp: %s\n' % (newest + 2, timestamp))
 
 
 # coping over builds

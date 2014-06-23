@@ -33,7 +33,7 @@ class Packaging(object):
     '''
     packaging class
     '''
-    def __init__(self, conf, comp):
+    def __init__(self, conf, comp, timestamp = None):
         '''
         parse packaging.conf file and other init work
 
@@ -41,6 +41,7 @@ class Packaging(object):
         @comp: choose from neutron, python-neutronclient and horizon
         '''
         self.comp = comp
+        self.timestamp = timestamp
         try:
             config = Parser()
             config.read(conf)
@@ -181,6 +182,7 @@ class Packaging(object):
         _chdir(self.unpack_dir)
         with open(self.spec_filename, 'r') as f_old, \
              open('tmp.spec', 'w') as f_new:
+            f_new.write('# building timestamp:\t%s\n' % self.timestamp)
             for line in f_old:
                 if re.match(r'.*patch00.*', line, re.IGNORECASE):
                     f_new.write('#' + line)
