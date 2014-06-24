@@ -68,7 +68,7 @@ else:
         shutil.rmtree(str(oldest))
     _rename('LATEST', str(newest + 1))
     _mkdir('LATEST')
-with open('LATEST/README.TXT', 'w') as f:
+with open('LATEST/README.txt', 'w') as f:
     f.write('Version: %s\nTimestamp: %s\n' % (newest + 2, timestamp))
 
 
@@ -81,7 +81,8 @@ for comp in components:
 
 # pushing
 _chdir(pwd)
-_runCmd('./push-rpm-to-yum %s' % os.path.join(dump_dir, 'LATEST', '*'))
+_runCmd('./push-rpm-to-yum %s' % os.path.join(dump_dir, 'LATEST', '*.rpm'))
+_runCmd('scp %s n1kv@savbu-vre-rhel65-vc://var/ftp/pub/hostedrepo/' % os.path.join(dump_dir, 'LATEST', 'README.txt'))
 print 'Complete!!'
 
 
