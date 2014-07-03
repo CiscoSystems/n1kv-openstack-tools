@@ -26,6 +26,14 @@ banner_fmt = '''
 error_fmt = '''
     !!!!! %s !!!!!
     '''
+html_content = '''
+<table>
+<th>%(comp)s (%(timestamp)s)</th>
+%(table)s
+</table>
+'''
+tr_content = r'<tr><td><a href="https://github.com/CiscoSystems/%(comp)s/commit/%(commit)s">%(patch)s</td></tr>'
+
 debug = True
 
 
@@ -110,7 +118,7 @@ class Packaging(object):
         else:
             return False
 
-    def create_cisco_patches(self, repo_dir):
+    def create_cisco_patches(self, repo_dir, html = False):
         '''
         generate patches between cisco branch and upstream tag
 
@@ -122,6 +130,19 @@ class Packaging(object):
         _runCmd('git checkout %s' % self.cisco_branch)
         _runCmd('git format-patch -o %s %s' %
                 (self.patches_dir, self.upstream_tag))
+        if html:
+            content = []
+            _chdir(self.patches_dir)
+            for patch in _listdir('.'):
+                with open(patch) as f:
+                    line = f.readline()
+                    commit = line.split()[1]
+                    content.append(tr_content %
+                                   {'comp': self.comp,
+                                    'commit': commit,
+                                    'patch': patch})
+            return content
+        return None
            
     def apply_patches(self, repo_dir, patches_dir, interact = False):
         '''
@@ -207,7 +228,7 @@ class Packaging(object):
                  os.path.join(self.staging_dir, 'SPECS', self.spec_filename)),
                 shell = True)
 
-    def repackage(self, rdo = None, force = False):
+    def repackage(self, rdo = None, force = False, html = False):
         '''
         main logic
         
@@ -220,7 +241,7 @@ class Packaging(object):
                                                             self.comp))
             if not force and up_to_date:
                 print '!!! SKIPPING %s PACKAGE ALREADY UPDATED !!!' % self.comp
-                return 0
+                return 0, ''
         else:
             self.clone_git_repo(self.stack_dir, self.comp)
         # clean up workspace
@@ -232,7 +253,7 @@ class Packaging(object):
         for subdir in 'RPMS SRPMS BUILD SOURCES SPECS tmp'.split():
             _mkdir(subdir)
 
-        self.create_cisco_patches(os.path.join(self.stack_dir, self.comp))
+        table_content = self.create_cisco_patches(os.path.join(self.stack_dir, self.comp), html)
         self.download_rpm(rdo)
         self.clone_git_repo(self.unpack_dir, self.comp, pull_remotes = False)
         source_dir = os.path.join(self.unpack_dir, self.comp)
@@ -252,7 +273,12 @@ class Packaging(object):
         _rename(self.comp, folder_name)
         _runCmd('tar -cvzf %s %s' % (tarball_name, folder_name))
         self.rpmbuild()
-        return 1
+        
+        if html:
+            return 1, html_content % {'comp': self.comp,
+                                      'timestamp': self.timestamp,
+                                      'table': '\n'.join(table_content)}
+        return 1, ''
 
 
 def _chdir(path):

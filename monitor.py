@@ -19,6 +19,7 @@ rdos = {'neutron': \
         os.path.join(os.getcwd(), 'openstack-neutron-2014.1-19.el6ost.src.rpm'),
         'python-neutronclient': \
         os.path.join(os.getcwd(),'python-neutronclient-2.3.4-1.el6ost.src.rpm')}
+build_html = 'build.html'
 
 # timestamp
 timestamp = str(datetime.now())
@@ -34,11 +35,17 @@ parser.add_argument(
     '--force',
     help = 'force to recreate package no matter if cisco code is changed',
     action = 'store_true')
+parser.add_argument(
+    '--html',
+    help = 'generate build info html',
+    action = 'store_true')
 args = parser.parse_args()
 update = 0
+html = {}
 for comp in components:
     agent = packaging_v2.Packaging(os.path.join(pwd, args.conf), comp, timestamp)
-    update |= agent.repackage(rdos[comp], args.force)
+    ret, html[comp] = agent.repackage(rdos[comp], force = args.force, html = args.html)
+    update |= ret
 
 if not update:
     print '!!!ALREADY UP-TO-DATE, SKIP BUILDING AND EXIT!!!'
@@ -78,6 +85,12 @@ for comp in components:
     for afile in _listdir('.'):
         shutil.copy(afile, os.path.join(dump_dir, 'LATEST'))
 
+
+# add info in build.html
+_chdir(dump_dir)
+with open(build_html, 'a') as f:
+    f.write(''.join(html.values())) 
+_runCmd('cp -f build.html /var/www/html/build.html')
 
 # pushing
 _chdir(pwd)
