@@ -23,7 +23,6 @@ if __name__ == '__main__':
         versions = pickle.load(open(args.filepath))
     except Exception:
         versions = {}
-        pass
     for comp in comps:
         try:
             output = subprocess.check_output(rmadison_cmd % {'comp': comp,
@@ -43,7 +42,8 @@ if __name__ == '__main__':
     if changes:
         # send email
         print 'change set: %s' % changes
-        subprocess.check_output('ssh chingwei@10.28.28.132 mail -s %s fenzhang@cisco.com cwchang@cisco.com' % changes,
+        subprocess.check_output(('ssh chingwei@10.28.29.132 mail -s "trusty rebase warning" ' 
+                                'fenzhang@cisco.com cwchang@cisco.com Cc: %s' % changes),
                                 shell=True)
 
     with open(args.filepath, 'w') as f:
