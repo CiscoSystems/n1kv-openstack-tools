@@ -336,6 +336,10 @@ if new_packages_needed == True:
     cmd += '\\"'
 
     os.system(cmd)
-    print cmd
-else:
-    print "Archive is up-to-date."
+    #print cmd
+
+
+for source in sources:
+    if output_record[source] != '':
+        print(output_record[source])
+
