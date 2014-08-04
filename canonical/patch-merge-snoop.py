@@ -339,9 +339,3 @@ if new_packages_needed == True:
     print cmd
 else:
     print "Archive is up-to-date."
-    
-for source in sources:
-    logger.debug('{0}: output_record={1}'.format(time.strftime('%m/%d/%Y-%H:%M:%S'),
-                                                 output_record[source]))
-                                                         
-    print('{0}\n'.format(output_record[source]))
