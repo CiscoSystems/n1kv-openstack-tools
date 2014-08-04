@@ -1,0 +1,6 @@
+# comp               os-ver   git-branch             git-tag
+#==================  ======== ====================== ========
+neutron 2014.1.1 n1k-2014.1.1 2014.1.1
+horizon 2014.1.1 n1k-2014.1.1 2014.1.1
+python-neutronclient 2.3.4 2.3.4-n1k-icehouse-dev 2.3.4
+
