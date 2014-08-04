@@ -17,7 +17,7 @@ working_dir = '/var/spool/'
 sources = ['neutron', 'horizon', 'python-neutronclient']
 #
 # debug tool : help to generate test data 
-#archive_check_cmd = '/root/bin/cwchang_rmadison'
+#archive_check_cmd = './simulated_rmadison'
 archive_check_cmd = 'rmadison'
 
 attributes = [
