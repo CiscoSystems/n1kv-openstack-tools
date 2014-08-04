@@ -1,2 +1,8 @@
-/var/spool/n1kv-log-openstack_trusty.txt
-/var/spool/n1kv-log-openstack_trusty.txt
+How to run:
+===========
+python patch-merge-snoop.py trusty
+
+File locations:
+===============
+/var/spool/n1kv-code-base-openstack-trusty.txt
+/var/spool/n1kv-version-openstack-trusty.db
