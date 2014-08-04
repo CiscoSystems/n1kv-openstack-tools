@@ -42,9 +42,8 @@ if __name__ == '__main__':
     if changes:
         # send email
         print 'change set: %s' % changes
-        subprocess.check_output(('ssh chingwei@10.28.29.132 mail -s "trusty rebase warning" ' 
-                                'fenzhang@cisco.com cwchang@cisco.com Cc: %s' % changes),
-                                shell=True)
+        subprocess.check_output(('ssh cwchang@10.28.29.132 "printf Need-rebase | mail -s \\"trusty rebase warning\\" cwchang@cisco.com"'), shell=True)
+
 
     with open(args.filepath, 'w') as f:
         pickle.dump(versions, f)
