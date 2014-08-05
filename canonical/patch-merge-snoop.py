@@ -53,7 +53,7 @@ input_record = {}
 output_record = {}
 
 if (len(sys.argv) != 2):
-   exit('usage: {0} <distribution>\noutput: <source> <archive> <version-to-update-to|-1> <mergeable-flag (e.g. True|False|NA)> '.format(sys.argv[0]))
+   exit('usage: {0} <precise|trusty|...distribution>\n'.format(sys.argv[0]))
 
 main_dist = sys.argv[1]
 
@@ -62,7 +62,7 @@ db_file = '{0}n1kv-version-openstack-{1}.db'.format(working_dir, main_dist)
 code_base_file = '{0}n1kv-code-base-openstack-{1}.txt'.format(working_dir, main_dist)
 
 
-def generate_output(source, max_dist, max_version, version):
+def generate_output(source, max_dist, max_version, version, init_time):
     if max_version > version:
         output = '{0}:{1} {2} {3} {4}'.format(source,
                                           max_dist,
@@ -71,8 +71,20 @@ def generate_output(source, max_dist, max_version, version):
                                           code_base_record[source][2])
         return_value  = True
     else:
-        output = '{0}:-1 -1 -1 -1'.format(source)
+        if max_version == version:
+           if init_time == True:
+               output = '{0}:{1} {2} {3} {4}'.format(source,
+                                                     max_dist,
+                                                     max_version,
+                                                     code_base_record[source][1],
+                                                     code_base_record[source][2])
+           else: 
+               output = '{0}:-1 -1 -1 -1'.format(source)
+        else:
+            output = '{0}:-1 -1 -1 -1'.format(source)
+
         return_value  = False
+
     return (output, return_value)
     
 ######################################################################
@@ -112,6 +124,8 @@ if os.path.isfile(code_base_file) == True:
             source = record[0]
             code_base_record[source] = record[1:]
             #print(code_base_record[source])
+else:
+   exit('need code base file {0}'.format(code_base_file))
 
 #
 # compose distribution based on input 'dist'
@@ -192,7 +206,7 @@ for source in sources:
 
         input_record[source][dist] = version
 
-        if version > max_version and base1 == base2:
+        if version > max_version and base1 >= base2:
             max_version = version
             max_dist = dist
 
@@ -257,8 +271,8 @@ if os.path.isfile(db_file) == False:
         (output_record[source], new_packages_needed1) =  \
                   generate_output(source, input_record[source]['max_dist'],
                                   input_record[source]['max_version'],
-                                  db_record['version'])
-
+                                  db_record['version'],
+                                  True)
         if new_packages_needed1 == True:
             new_packages_needed = True 
                                                 
@@ -315,7 +329,8 @@ else:
                        generate_output(source, 
                                        input_record[source]['max_dist'],
                                        input_record[source]['max_version'],
-                                       row[7])
+                                       row[7], 
+                                       False)
 
         if new_packages_needed1 == True:
             cursor.execute(''' UPDATE Packages SET max_dist = ?, max_version = ?, updated_version = ? WHERE id = ?''', 
