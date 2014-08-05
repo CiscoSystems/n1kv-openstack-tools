@@ -17,8 +17,8 @@ working_dir = '/var/spool/'
 sources = ['neutron', 'horizon', 'python-neutronclient']
 #
 # debug tool : help to generate test data 
-#archive_check_cmd = './simulated_rmadison'
-archive_check_cmd = 'rmadison'
+archive_check_cmd = './simulated_rmadison'
+#archive_check_cmd = 'rmadison'
 
 attributes = [
     'source',
@@ -71,7 +71,7 @@ def generate_output(source, max_dist, max_version, version):
                                           code_base_record[source][2])
         return_value  = True
     else:
-        output = ''
+        output = '{0}:-1 -1 -1 -1'.format(source)
         return_value  = False
     return (output, return_value)
     
@@ -326,7 +326,6 @@ else:
             db.commit()
             new_packages_needed = True
     
-
 if new_packages_needed == True:
     cmd = 'ssh cwchang@10.28.29.132 /users/cwchang/bin/trigger-mail ' + '\\"' 
     for source in sources:
@@ -335,7 +334,7 @@ if new_packages_needed == True:
 
     cmd += '\\"'
 
-    os.system(cmd)
+    #os.system(cmd)
     #print cmd
 
 
