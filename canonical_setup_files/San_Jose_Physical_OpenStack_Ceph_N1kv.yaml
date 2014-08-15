@@ -1,0 +1,260 @@
+# OpenStack Options
+openstack-common:
+  series: trusty
+  services:
+    nova-compute:
+      charm: nova-compute
+      options:
+        config-flags: "auto_assign_floating_ip=False,compute_driver=libvirt.LibvirtDriver"
+        enable-live-migration: True
+        enable-resize: True
+        migration-auth-type: none
+        virt-type: kvm
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+    neutron-gateway:
+      charm: quantum-gateway
+      options:
+        instance-mtu: 1350
+        ext-port: eth3
+        plugin: n1kv
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+    mysql:
+      charm: percona-cluster
+      #branch: "lp:charms/trusty/percona-cluster"
+      branch: "lp:~openstack-charmers/charms/trusty/percona-cluster/trunk"
+      options:
+        vip: 172.18.112.192
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+        root-password: ubuntu
+        sst-password: ubuntu
+    mysql-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/hacluster"
+      options:
+        corosync_mcastaddr: 226.94.1.1
+        corosync_key: "3r8Y1zILzqADvJB7eLJGPrCI4g5Tg+uZ0+qq1kXNe0273yZlee9k2VT1twsyaSx3tNDDIcfuM/ykQNFRLw6dOWdXPbzgqIM5M5FExYQlXv2+s3kowRL0xuanVWXucaKu+t3jDDxmVnhj0SY/ixl3Gg0XrW4qXFoK05uMoIhK8Js="
+    rabbitmq-server:
+      charm: rabbitmq-server
+      branch: "lp:charms/trusty/rabbitmq-server"
+      options:
+        vip: 172.18.112.193
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+        ha-vip-only: True
+    keystone:
+      charm: keystone
+      branch: "lp:charms/trusty/keystone"
+      options:
+        admin-password: openstack
+        debug: 'True'
+        log-level: DEBUG
+        enable-pki: 'True'
+        vip: 172.18.112.194
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+    keystone-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/hacluster"
+      options:
+        corosync_mcastaddr: 226.94.1.5
+        corosync_key: "6aVson6XvaprzAppLB6UA4OUgZIyNtW+qVwbanQta0aLMagwbPNomTniLr3ZyVGtEL7A0c48tJvaA+lafL2HzGq+43/aKnUbG5k7d4sKaQXP/sKLhCpyj+04DddBRAVsBJ6r9tG45CGF+H+qUykL1rOT0EesZhDqBiBGrV+DXes="
+    openstack-dashboard:
+      charm: openstack-dashboard
+      expose: true
+      options:
+        profile: cisco
+        vip: 172.18.112.195
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+    dashboard-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/hacluster"
+      options:
+        corosync_mcastaddr: 226.94.1.9
+        corosync_key: "9aNUFk+o0Hqt/6i46ltcycMogHm+bgOkhsIwBwuXX3YQZfvioZZZqggi9R9Ccj1OqIrxLA+GTstghYcc/hjULhIl3BIX6HAdePhX7sI8khTCiPTN/w4MIy3nW1CjFaeWW31CIhrXnTcq11l0MEB3vKNlN5/b7/kqvagB6oSjw4s="
+    nova-cloud-controller:
+      charm: nova-cloud-controller
+      options:
+        network-manager: Neutron
+        neutron-external-network: Public_Network
+        quantum-security-groups: "yes"
+        n1kv-vsm-ip: 172.18.112.199
+        n1kv-vsm-username: admin
+        n1kv-vsm-password: Cisco12345
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+        quantum-plugin: n1kv
+        vip: 172.18.112.196
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+    ncc-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/hacluster"
+      options:
+        corosync_mcastaddr: 226.94.1.6
+        corosync_key: "xZP7GDWV0e8Qs0GxWThXirNNYlScgi3sRTdZk/IXKDqkNFcwdCWfRQnqrHU/6mb6sz6OIoZzX2MtfMQIDcXuPqQyvKuv7YbRyGHmQwAWDUA4ed759VWAO39kHkfWp9y5RRk/wcHakTcWYMwm70upDGJEP00YT3xem3NQy27AC1w="
+    cinder:
+      charm: cinder
+      branch: "lp:charms/trusty/cinder"
+      options:
+        block-device: "None"
+        overwrite: 'True'
+        ceph-osd-replication-count: 3
+        glance-api-version: 2
+        vip: 172.18.112.197
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+    cinder-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/cluster"
+      options:
+        corosync_mcastaddr: 226.94.1.8
+        corosync_key: "wllBMGAfdCsotmXGbCbJ0LhAuOPQ9ZEIIAXIWWeNLwrmC7C9jmm92RSL1kYGCRRWaL7W7AziA6aBy//rZxeZ3z0YkM0QFD+4Vg7vtM6JaBoOFlJgVd6mbYUfVbI6IMqGiUDJ8hh5sKmN7kwQLNNwASGlJiMo5s9ErWviVM6/OrQ="
+    glance:
+      charm: glance
+      branch: "lp:charms/trusty/glance"
+      options:
+        ceph-osd-replication-count: 3
+        vip: 172.18.112.198
+        vip_iface: eth0
+        vip_cidr: 24
+        ha-bindiface: eth0
+    glance-hacluster:
+      charm: hacluster
+      branch: "lp:charms/trusty/hacluster"
+      options:
+        corosync_mcastaddr: 226.94.1.7
+        corosync_key: "eO34WuxbQ/FaQvYb/ffTtX+0phNfNZlmhRrC8gLYJMf/b52Ny3cRXjgp5P1lEfZFHjrhQ3lWQOqENuBVcejS1OYt574Xq2l1XLEHoEPbktovDhaS9yxIU7SYULdlx7j/BNtW7evY0pRBr23MYWEI3hETHVdtOeqgW1IB3zgoyco="
+    ceph:
+      charm: ceph
+      branch: "lp:charms/trusty/ceph"
+      options:
+        monitor-count: 3
+        fsid: 6547bd3e-1397-11e2-82e5-53567c8d32dc
+        monitor-secret: AQCXrnZQwI7KGBAAiPofmKEXKxu5bUzoYLVkbQ==
+        osd-devices: /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh /dev/sdi /dev/sdj /dev/sdk /dev/sdl /dev/sdm /dev/sdn
+        osd-reformat: "yes"
+    ceph-radosgw:
+      charm: ceph-radosgw
+      branch: "lp:charms/trusty/ceph-radosgw"
+#    ceilometer:
+#      charm: ceilometer
+#      branch: "lp:charms/trusty/ceilometer"
+#    ceilometer-agent:
+#      charm: ceilometer-agent
+#      branch: "lp:charms/trusty/ceilometer-agent"
+#    mongodb:
+#      charm: mongodb
+#      branch: lp:charms/mongodb
+#    heat:
+#      charm: heat
+#      branch: "lp:charms/trusty/heat"
+  relations:
+    - [ keystone, mysql ]
+    - [ nova-cloud-controller, mysql ]
+    - [ nova-cloud-controller, rabbitmq-server ]
+    - [ nova-cloud-controller, glance ]
+    - [ nova-cloud-controller, keystone ]
+    - [ nova-compute, nova-cloud-controller ]
+    - [ nova-compute, mysql ]
+    - [ nova-compute, 'rabbitmq-server:amqp' ]
+    - [ nova-compute, glance ]
+    - [ nova-compute, ceph ]
+    - [ glance, mysql ]
+    - [ glance, keystone ]
+    - [ glance, ceph ]
+    - [ glance, cinder ]
+    - [ glance, rabbitmq-server ]
+    - [ cinder, mysql ]
+    - [ cinder, rabbitmq-server ]
+    - [ cinder, nova-cloud-controller ]
+    - [ cinder, keystone ]
+    - [ cinder, ceph ]
+    - [ neutron-gateway, mysql ]
+    - [ neutron-gateway, rabbitmq-server ]
+    - [ neutron-gateway, nova-cloud-controller ]
+    - [ openstack-dashboard, keystone ]
+    - [ ceph, ceph-radosgw ]
+    - [ ceph-radosgw, keystone ]
+    - [ mysql, mysql-hacluster ]
+    - [ keystone, keystone-hacluster ]
+    - [ nova-cloud-controller, ncc-hacluster ]
+    - [ glance, glance-hacluster ]
+    - [ cinder, cinder-hacluster ]
+    - [ openstack-dashboard, dashboard-hacluster ]
+###########################
+# OS: Trusty              #
+# OpenStack: Icehouse     #
+# Object Storage: RADOWGW #
+# Service allocation: LXC #
+###########################
+trusty-icehouse-radosgw-lxc:
+  inherits: openstack-common
+  series: trusty
+  services:
+    neutron-gateway:
+      num_units: 3
+      constraints: "tags=aio"
+    nova-compute:
+      num_units: 3
+      constraints: "tags=ceph"
+    nova-cloud-controller:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    rabbitmq-server:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    mysql:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    openstack-dashboard:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    keystone:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    cinder:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    glance:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    ceph-radosgw:
+      num_units: 3
+      to:
+      - lxc:neutron-gateway=0
+      - lxc:neutron-gateway=1
+      - lxc:neutron-gateway=2
+    ceph:
+      num_units: 3
+      to:
+      - nova-compute=0
+      - nova-compute=1
+      - nova-compute=2
