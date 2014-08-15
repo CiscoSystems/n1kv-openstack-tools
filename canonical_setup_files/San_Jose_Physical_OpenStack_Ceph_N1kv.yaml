@@ -1,3 +1,11 @@
+# This file contains San Jose lab physical setiup for Barracuda 5.2(1)SK3(1.1)
+# N1KV OpenStack deployment.
+# percona has no presence in Charm Store as of 08/15/2014 hence its branch is 
+# from different from the the rest
+# Also N1KV related charms are from Cisco-N1KV public PPA
+# juju-deployer -c ./OpenStack_Ceph_N1kv.yaml -d -s 20 -w 300 -r 3 -e maas 
+#  -t 9999 trusty-icehouse-radosgw-lxc
+
 # OpenStack Options
 openstack-common:
   series: trusty
