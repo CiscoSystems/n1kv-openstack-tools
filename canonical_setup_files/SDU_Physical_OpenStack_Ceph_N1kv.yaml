@@ -2,7 +2,7 @@
 # N1KV OpenStack deployment. Absence of branch key indicates the charms needs 
 # to be pre-installed at the trust/<charm> folder when the juju-deployer is 
 # invoked
-# juju-deployer -c ./OpenStack_Ceph_N1kv.yaml -d -s 20 -w 300 -r 3 -e maas 
+# juju-deployer -c ./<this file> -d -s 20 -w 300 -r 3 -e maas 
 #  -t 9999 trusty-icehouse-radosgw-lxc
 
 # OpenStack Options
