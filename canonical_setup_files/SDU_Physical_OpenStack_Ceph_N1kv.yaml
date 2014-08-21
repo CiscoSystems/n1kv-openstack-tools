@@ -7,7 +7,7 @@
 
 # OpenStack Options
 openstack-common:
-  series: trusty
+  series: trusty 
   services:
     nova-compute:
       charm: nova-compute
@@ -30,10 +30,11 @@ openstack-common:
       options:
         root-password: ubuntu
         sst-password: ubuntu
-        vip: 172.18.112.192
+        vip: 10.0.45.201
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
+        max-connections: 500
     mysql-hacluster:
       charm: hacluster
       options:
@@ -42,8 +43,8 @@ openstack-common:
     rabbitmq-server:
       charm: rabbitmq-server
       options:
-        vip: 172.18.112.193
-        vip_iface: eth0
+        vip: 10.0.45.202
+        vip_iface: eth0 
         vip_cidr: 24
         ha-bindiface: eth0
         ha-vip-only: True
@@ -53,8 +54,8 @@ openstack-common:
         admin-password: openstack
         debug: 'True'
         log-level: DEBUG
-        enable-pki: 'True'
-        vip: 172.18.112.194
+        enable-pki: 'False'
+        vip: 10.0.45.203
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -68,7 +69,8 @@ openstack-common:
       expose: true
       options:
         profile: cisco
-        vip: 172.18.112.195
+        secret: openstack
+        vip: 10.0.45.204
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -83,12 +85,12 @@ openstack-common:
         network-manager: Neutron
         neutron-external-network: Public_Network
         quantum-security-groups: "yes"
-        n1kv-vsm-ip: 172.18.112.199
+        n1kv-vsm-ip: 10.0.45.208
         n1kv-vsm-username: admin
         n1kv-vsm-password: Cisco12345
         openstack-origin: ppa:cisco-n1kv/icehouse-updates
         quantum-plugin: n1kv
-        vip: 172.18.112.196
+        vip: 10.0.45.205
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -104,7 +106,7 @@ openstack-common:
         overwrite: 'True'
         ceph-osd-replication-count: 3
         glance-api-version: 2
-        vip: 172.18.112.197
+        vip: 10.0.45.206
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -117,7 +119,7 @@ openstack-common:
       charm: glance
       options:
         ceph-osd-replication-count: 3
-        vip: 172.18.112.198
+        vip: 10.0.45.207
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -136,6 +138,35 @@ openstack-common:
         osd-reformat: "yes"
     ceph-radosgw:
       charm: ceph-radosgw
+    vsm-p:
+      charm: vsm
+      options:
+        n1kv-source: ppa:cisco-n1kv/n1kv-updates
+        n1kv-vsm-domain-id: 500
+        n1kv-vsm-password: "Cisco12345"
+        n1kv-vsm-mgmt-ip: "10.0.45.208"
+        n1kv-phy-intf-bridge: "eth0"
+        n1kv-vsm-mgmt-gateway: "10.0.45.253"
+        n1kv-vsm-mgmt-netmask: "255.255.255.0"
+        n1kv-vsm-role: "primary"
+        n1kv-vsm-name: "vsm-p"
+    vsm-s:
+      charm: vsm
+      options:
+        n1kv-source: ppa:cisco-n1kv/n1kv-updates
+        n1kv-vsm-domain-id: 500
+        n1kv-vsm-password: "Cisco12345"
+        n1kv-phy-intf-bridge: "eth0"
+        n1kv-vsm-role: "secondary"
+        n1kv-vsm-name: "vsm-s"
+    vem:
+      charm: vem
+      options:
+        host_mgmt_intf: eth2
+        n1kv-vsm-domain-id: 500
+        uplink_profile: phys eth3 profile sys-uplink
+        n1kv-source: ppa:cisco-n1kv/n1kv-updates
+        n1kv-vsm-ip: 10.0.45.208
 #    ceilometer:
 #      charm: ceilometer
 #      branch: "lp:charms/trusty/ceilometer"
@@ -197,6 +228,14 @@ trusty-icehouse-radosgw-lxc:
     nova-compute:
       num_units: 3
       constraints: "tags=ceph"
+    vsm-p:
+      num_units: 1
+      constraints: "tags=vsmp"
+    vsm-s:
+      num_units: 1
+      constraints: "tags=vsms"
+    vem:
+      num_units: 1
     nova-cloud-controller:
       num_units: 3
       to:
