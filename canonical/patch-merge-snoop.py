@@ -63,6 +63,15 @@ code_base_file = '{0}n1kv-code-base-openstack-{1}.txt'.format(working_dir, main_
 
 
 def generate_output(source, max_dist, max_version, version, init_time):
+
+    base1 = code_base_record[source][0]
+    base2 = max_version.split('-')[0].split(':')[1]
+
+    if base1 > base2:
+        output = '{0}:-1 -1 -1 -1'.format(source)
+        return_value = False
+        return (output, return_value)
+    
     if max_version > version:
         output = '{0}:{1} {2} {3} {4}'.format(source,
                                           max_dist,
@@ -83,7 +92,7 @@ def generate_output(source, max_dist, max_version, version, init_time):
         else:
             output = '{0}:-1 -1 -1 -1'.format(source)
 
-        return_value  = False
+        return_value = False
 
     return (output, return_value)
     
@@ -202,8 +211,6 @@ for source in sources:
         base1 = code_base_record[source][0]
         base2 = version.split('-')[0].split(':')[1]
        
-        #print('cwchang {0} {1} {2}'.format(base1, base2, source))
-
         input_record[source][dist] = version
 
         if version > max_version and base1 >= base2:
@@ -267,9 +274,9 @@ if os.path.isfile(db_file) == False:
         db_record['max_version'] = input_record[source]['max_version']
         db_record['max_dist'] = input_record[source]['max_dist']
 
-
         (output_record[source], new_packages_needed1) =  \
-                  generate_output(source, input_record[source]['max_dist'],
+                  generate_output(source, 
+                                  input_record[source]['max_dist'],
                                   input_record[source]['max_version'],
                                   db_record['version'],
                                   True)

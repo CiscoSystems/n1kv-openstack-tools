@@ -1,9 +1,11 @@
 #!/bin/bash 
 if [ "$1" == "neutron" ]; then
     echo "neutron | 1:2014.1-0ubuntu1    | trusty          | source"
-    echo "neutron | 1:2014.1-0ubuntu1.3  | trusty-security | source"
-    echo "neutron | 1:2014.1.3-0ubuntu2 | trusty-updates  | source"
+    echo "neutron | 1:2014.1.1-0ubuntu1.4  | trusty-security | source"
+    echo "neutron | 1:2014.1.2-0ubuntu1  | trusty-proposed | source"
+    echo "neutron | 1:2014.1.2-0ubuntu1  | trusty-updates  | source"
     echo "neutron | 1:2014.2~b2-0ubuntu1 | utopic          | source"
+
 fi
 
 if [ "$1" == "horizon" ]; then
