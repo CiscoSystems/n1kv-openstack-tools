@@ -17,14 +17,16 @@ openstack-common:
         enable-resize: True
         migration-auth-type: none
         virt-type: kvm
-        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4 
     neutron-gateway:
       charm: quantum-gateway
       options:
         instance-mtu: 1350
         ext-port: eth3
         plugin: n1kv
-        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
     mysql:
       charm: percona-cluster
       options:
@@ -74,6 +76,8 @@ openstack-common:
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
+#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
     dashboard-hacluster:
       charm: hacluster
       options:
@@ -88,7 +92,8 @@ openstack-common:
         n1kv-vsm-ip: 10.0.45.208
         n1kv-vsm-username: admin
         n1kv-vsm-password: Cisco12345
-        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
+        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
         quantum-plugin: n1kv
         vip: 10.0.45.205
         vip_iface: eth0
@@ -245,9 +250,9 @@ trusty-icehouse-radosgw-lxc:
     rabbitmq-server:
       num_units: 3
       to:
-      - lxc:neutron-gateway=0
-      - lxc:neutron-gateway=1
-      - lxc:neutron-gateway=2
+      - neutron-gateway=0
+      - neutron-gateway=1
+      - neutron-gateway=2
     mysql:
       num_units: 3
       to:
@@ -290,3 +295,4 @@ trusty-icehouse-radosgw-lxc:
       - nova-compute=0
       - nova-compute=1
       - nova-compute=2
+
