@@ -1,11 +1,3 @@
-# This file contains San Jose lab physical setiup for Barracuda 5.2(1)SK3(1.1)
-# N1KV OpenStack deployment.
-# percona has no presence in Charm Store as of 08/15/2014 hence its branch is 
-# from different from the the rest
-# Also N1KV related charms are from Cisco-N1KV public PPA
-# juju-deployer -c ./<this file> -d -s 20 -w 300 -r 3 -e maas 
-#  -t 9999 trusty-icehouse-radosgw-lxc
-
 # OpenStack Options
 openstack-common:
   series: trusty
@@ -31,12 +23,13 @@ openstack-common:
       #branch: "lp:charms/trusty/percona-cluster"
       branch: "lp:~openstack-charmers/charms/trusty/percona-cluster/trunk"
       options:
-        vip: 172.18.112.192
+        vip: 3.31.1.40
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
         root-password: ubuntu
         sst-password: ubuntu
+        dataset-size: '30%'
     mysql-hacluster:
       charm: hacluster
       branch: "lp:charms/trusty/hacluster"
@@ -47,7 +40,7 @@ openstack-common:
       charm: rabbitmq-server
       branch: "lp:charms/trusty/rabbitmq-server"
       options:
-        vip: 172.18.112.193
+        vip: 3.31.1.41
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -60,7 +53,7 @@ openstack-common:
         debug: 'True'
         log-level: DEBUG
         enable-pki: 'True'
-        vip: 172.18.112.194
+        vip: 3.31.1.42
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -75,7 +68,7 @@ openstack-common:
       expose: true
       options:
         profile: cisco
-        vip: 172.18.112.195
+        vip: 3.31.1.43
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -91,12 +84,12 @@ openstack-common:
         network-manager: Neutron
         neutron-external-network: Public_Network
         quantum-security-groups: "yes"
-        n1kv-vsm-ip: 172.18.112.199
+        n1kv-vsm-ip: 3.31.1.47
         n1kv-vsm-username: admin
         n1kv-vsm-password: Cisco12345
         openstack-origin: ppa:cisco-n1kv/icehouse-updates
         quantum-plugin: n1kv
-        vip: 172.18.112.196
+        vip: 3.31.1.44
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -114,7 +107,7 @@ openstack-common:
         overwrite: 'True'
         ceph-osd-replication-count: 3
         glance-api-version: 2
-        vip: 172.18.112.197
+        vip: 3.31.1.45
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -129,7 +122,7 @@ openstack-common:
       branch: "lp:charms/trusty/glance"
       options:
         ceph-osd-replication-count: 3
-        vip: 172.18.112.198
+        vip: 3.31.1.46
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
@@ -208,10 +201,10 @@ trusty-icehouse-radosgw-lxc:
   services:
     neutron-gateway:
       num_units: 3
-      constraints: "tags=aio"
+      constraints: "tags=hanode"
     nova-compute:
       num_units: 3
-      constraints: "tags=ceph"
+      constraints: "tags=hanode"
     nova-cloud-controller:
       num_units: 3
       to:
