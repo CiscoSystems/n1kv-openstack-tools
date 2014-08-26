@@ -46,9 +46,9 @@ openstack-common:
       charm: rabbitmq-server
       options:
         vip: 10.0.45.202
-        vip_iface: eth0 
+        vip_iface: eth2
         vip_cidr: 24
-        ha-bindiface: eth0
+        ha-bindiface: eth2
         ha-vip-only: True
     keystone:
       charm: keystone
