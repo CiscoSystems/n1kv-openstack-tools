@@ -2,8 +2,7 @@
 # N1KV OpenStack deployment. Absence of branch key indicates the charms needs 
 # to be pre-installed at the trust/<charm> folder when the juju-deployer is 
 # invoked
-# juju-deployer -c ./<this file> -d -s 20 -w 300 -r 3 -e maas 
-#  -t 9999 trusty-icehouse-radosgw-lxc
+# sudo juju-deployer -c ./OpenStack_HA_N1kv.yaml -d -s 30 -w 300 -r 3 -t 9999 trusty-icehouse-ha-lxc
 
 # OpenStack Options
 openstack-common:
@@ -15,18 +14,16 @@ openstack-common:
         config-flags: "auto_assign_floating_ip=False,compute_driver=libvirt.LibvirtDriver"
         enable-live-migration: True
         enable-resize: True
-        migration-auth-type: none
+        migration-auth-type: 'ssh'
         virt-type: kvm
-#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
-        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4 
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
     neutron-gateway:
       charm: quantum-gateway
       options:
         instance-mtu: 1350
         ext-port: eth3
         plugin: n1kv
-#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
-        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
     mysql:
       charm: percona-cluster
       options:
@@ -39,6 +36,7 @@ openstack-common:
         max-connections: 500
     mysql-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.1
         corosync_key: "3r8Y1zILzqADvJB7eLJGPrCI4g5Tg+uZ0+qq1kXNe0273yZlee9k2VT1twsyaSx3tNDDIcfuM/ykQNFRLw6dOWdXPbzgqIM5M5FExYQlXv2+s3kowRL0xuanVWXucaKu+t3jDDxmVnhj0SY/ixl3Gg0XrW4qXFoK05uMoIhK8Js="
@@ -58,11 +56,10 @@ openstack-common:
         log-level: DEBUG
         enable-pki: 'False'
         vip: 10.0.45.203
-        vip_iface: eth0
-        vip_cidr: 24
         ha-bindiface: eth0
     keystone-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.5
         corosync_key: "6aVson6XvaprzAppLB6UA4OUgZIyNtW+qVwbanQta0aLMagwbPNomTniLr3ZyVGtEL7A0c48tJvaA+lafL2HzGq+43/aKnUbG5k7d4sKaQXP/sKLhCpyj+04DddBRAVsBJ6r9tG45CGF+H+qUykL1rOT0EesZhDqBiBGrV+DXes="
@@ -76,24 +73,23 @@ openstack-common:
         vip_iface: eth0
         vip_cidr: 24
         ha-bindiface: eth0
-#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
-        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
     dashboard-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.9
         corosync_key: "9aNUFk+o0Hqt/6i46ltcycMogHm+bgOkhsIwBwuXX3YQZfvioZZZqggi9R9Ccj1OqIrxLA+GTstghYcc/hjULhIl3BIX6HAdePhX7sI8khTCiPTN/w4MIy3nW1CjFaeWW31CIhrXnTcq11l0MEB3vKNlN5/b7/kqvagB6oSjw4s="
     nova-cloud-controller:
       charm: nova-cloud-controller
       options:
+        quantum-security-groups: "no"
         network-manager: Neutron
         neutron-external-network: Public_Network
-        quantum-security-groups: "yes"
         n1kv-vsm-ip: 10.0.45.208
         n1kv-vsm-username: admin
         n1kv-vsm-password: Cisco12345
-#        openstack-origin: ppa:cisco-n1kv/icehouse-updates
-        openstack-origin: deb https://cwchang:jNfJjpwSxNLzBN72dlf6@private-ppa.launchpad.net/springfield-team/icehouse-staging/ubuntu trusty main|F5DB2BA06DB3EEB4
+        openstack-origin: ppa:cisco-n1kv/icehouse-updates
         quantum-plugin: n1kv
         vip: 10.0.45.205
         vip_iface: eth0
@@ -101,6 +97,7 @@ openstack-common:
         ha-bindiface: eth0
     ncc-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.6
         corosync_key: "xZP7GDWV0e8Qs0GxWThXirNNYlScgi3sRTdZk/IXKDqkNFcwdCWfRQnqrHU/6mb6sz6OIoZzX2MtfMQIDcXuPqQyvKuv7YbRyGHmQwAWDUA4ed759VWAO39kHkfWp9y5RRk/wcHakTcWYMwm70upDGJEP00YT3xem3NQy27AC1w="
@@ -112,11 +109,10 @@ openstack-common:
         ceph-osd-replication-count: 3
         glance-api-version: 2
         vip: 10.0.45.206
-        vip_iface: eth0
-        vip_cidr: 24
         ha-bindiface: eth0
     cinder-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.8
         corosync_key: "wllBMGAfdCsotmXGbCbJ0LhAuOPQ9ZEIIAXIWWeNLwrmC7C9jmm92RSL1kYGCRRWaL7W7AziA6aBy//rZxeZ3z0YkM0QFD+4Vg7vtM6JaBoOFlJgVd6mbYUfVbI6IMqGiUDJ8hh5sKmN7kwQLNNwASGlJiMo5s9ErWviVM6/OrQ="
@@ -125,11 +121,10 @@ openstack-common:
       options:
         ceph-osd-replication-count: 3
         vip: 10.0.45.207
-        vip_iface: eth0
-        vip_cidr: 24
         ha-bindiface: eth0
     glance-hacluster:
       charm: hacluster
+      branch: "lp:~freyes/+junk/hacluster-debug-on"
       options:
         corosync_mcastaddr: 226.94.1.7
         corosync_key: "eO34WuxbQ/FaQvYb/ffTtX+0phNfNZlmhRrC8gLYJMf/b52Ny3cRXjgp5P1lEfZFHjrhQ3lWQOqENuBVcejS1OYt574Xq2l1XLEHoEPbktovDhaS9yxIU7SYULdlx7j/BNtW7evY0pRBr23MYWEI3hETHVdtOeqgW1IB3zgoyco="
@@ -174,20 +169,7 @@ openstack-common:
         uplink_profile: phys eth3 profile sys-uplink
         n1kv-source: ppa:cisco-n1kv/n1kv-updates
         n1kv-vsm-ip: 10.0.45.208
-#    ceilometer:
-#      charm: ceilometer
-#      branch: "lp:charms/trusty/ceilometer"
-#    ceilometer-agent:
-#      charm: ceilometer-agent
-#      branch: "lp:charms/trusty/ceilometer-agent"
-#    mongodb:
-#      charm: mongodb
-#      branch: lp:charms/mongodb
-#    heat:
-#      charm: heat
-#      branch: "lp:charms/trusty/heat"
   relations:
-#    - [ keystone, mysql ]
     - [ haproxy, ceph-radosgw ]
     - [ nova-cloud-controller, mysql ]
     - [ nova-cloud-controller, rabbitmq-server ]
@@ -220,22 +202,23 @@ openstack-common:
     - [ glance, glance-hacluster ]
     - [ cinder, cinder-hacluster ]
     - [ openstack-dashboard, dashboard-hacluster ]
+    - [ keystone, mysql ]
 ###########################
 # OS: Trusty              #
 # OpenStack: Icehouse     #
 # Object Storage: RADOWGW #
 # Service allocation: LXC #
 ###########################
-trusty-icehouse-radosgw-lxc:
+trusty-icehouse-ha-lxc:
   inherits: openstack-common
   series: trusty
   services:
     neutron-gateway:
       num_units: 3
-      constraints: "tags=aio"
+      constraints: "tags=control"
     nova-compute:
       num_units: 3
-      constraints: "tags=ceph"
+      constraints: "tags=compute"
     vsm-p:
       num_units: 1
       constraints: "tags=vsmp"
